@@ -4,8 +4,7 @@ import Common
 
 initGame :: Int -> State
 
--- TODO: Implement a method to initialize a new game given n players
-initGame n = State { players = [ ],
+initGame n = State { players = [ HPlayer { name = "Player " ++ show x, hand = [ ]} | x <- [1..n] ],
                      deck = fullDeck,
                      d_stack = [ ] }
 
