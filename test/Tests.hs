@@ -72,14 +72,14 @@ shufflerSpecs = describe "Shuffler" $ do
   it "State has 56 cards" $ do
     length (deck demoState) `shouldBe` 56
   it "Shuffled to the same number of cards" $ do
-    pendingWith "Implement shuffleDeck function"
-    -- demoState' <- shuffleDeck demoState
-    -- length (deck demoState) `shouldBe` 56
+    --pendingWith "Implement shuffleDeck function"
+     demoState' <- shuffleDeck demoState
+     length (deck demoState) `shouldBe` 56
   it "Shuffled to different positions" $ do
-    pendingWith "Implement shuffleDeck function"
-    -- let originalDeck = deck demoState
-    -- demoState' <- shuffleDeck demoState
-    -- (deck demoState') `shouldNotBe` originalDeck
+    --pendingWith "Implement shuffleDeck function"
+     let originalDeck = deck demoState
+     demoState' <- shuffleDeck demoState
+     (deck demoState') `shouldNotBe` originalDeck
 
 gameSpecs :: Spec
 gameSpecs = describe "Game" $ do
