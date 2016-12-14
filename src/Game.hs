@@ -11,15 +11,16 @@ initialCardCount = 5
 
 initGame :: Int -> State
 
-initGame n = State { players = [ HPlayer { name = "Player " ++ show x, hand = [ ]} | x <- [1..n] ],
-                     deck = initDeck,
-                     d_stack = [ ],
-                     cur_player = noPlayer
+initGame n = State { players = [ HPlayer { name = "Player " ++ show x, hand = [ ]} | x <- [1..n] ], 
+                      e_players = [],
+                      deck = initDeck,
+                      d_stack = [ ],
+                      cur_player = noPlayer}
 
 setupGame :: State -> IO State
 setupGame gs = do
-    gs1 <- shuffleDeck gs
-    shuffleDeck ( State {players = initPlayersCard gs1, deck = finalDeck gs1, d_stack = discardedExplodingCards gs1})
+    gs' <- shuffleDeck gs
+    shuffleDeck ( gs' {players = initPlayersCard gs', deck = finalDeck gs', d_stack = discardedExplodingCards gs'})
 
 playersCount :: State -> Int
 playersCount gs = length $ players gs
@@ -56,7 +57,6 @@ group n l
   | n > 0 = (take n l) : (group n (drop n l))
   | otherwise = error "Negative n"
 
-
 startGame :: State -> IO State
 startGame gs = pickNextAndPlay gs
 
@@ -79,9 +79,9 @@ playLoopNext gs next_action
   | next_action == AttackNextPlayer = attackAndPlay gs
   | otherwise = pickNextAndPlay gs
 
--- TODO: Implement this function
+-- DONE: Implement this function
 playerHasWon :: State -> Bool
-playerHasWon gs = False
+playerHasWon gs = playersCount gs == 1
 
 explodeAndPlay :: State -> IO State
 explodeAndPlay gs = do
@@ -93,9 +93,11 @@ attackAndPlay gs = do
   gs' <- pickNextPlayer gs
   playLoop gs' True
 
--- TODO: Implement this function
+-- DONE: Implement this function
 explodePlayer :: State -> IO State
-explodePlayer gs = return (gs)
+explodePlayer gs = return ( gs {  players = [p | p <- players gs, p /= cur_player gs], 
+                                  e_players = (cur_player gs): e_players gs,
+                                  cur_player = getNextPlayer gs (cur_player gs)} )
 
 discardExplodedHand :: State -> IO State
 discardExplodedHand gs = do
@@ -143,9 +145,12 @@ takeFromHandWithAction cards next_action gs = do
   gs' <- takeFromHand cards gs
   return (next_action, gs')
 
--- TODO: Implement this function
+-- DONE: Implement this function
 takeFromHand :: [ Card ] -> State -> IO State
-takeFromHand cards gs = return (gs)
+takeFromHand cards gs = do
+  let (dscard, newHand) = takeCards cards (curHand gs)
+  gs' <- updateCurHand gs newHand
+  return (gs'{d_stack = dscard ++ (d_stack gs')})
 
 takeFromDeck :: State -> IO (Action, State)
 takeFromDeck gs = do
@@ -210,9 +215,14 @@ setupDefuseCards gs = do
   gs' <- updateDeck gs deck'
   dealCardToAllPlayers (head for_distro) gs' $ players gs'
 
--- TODO: Implement this function
+-- DONE: Implement this function
 drawNCards :: Int -> State -> Player -> IO State
-drawNCards n gs player = return gs
+drawNCards n gs player = do
+  gs' <- updateDeck gs $ drop n $ deck gs
+  player' <- updateHand player (hand player ++ take n (deck gs))
+  updatePlayer gs' player player'
+
+
 
 dealCardToAllPlayers :: Card -> State -> [ Player ] -> IO State
 dealCardToAllPlayers card gs [] = return (gs)
@@ -278,9 +288,12 @@ updateDiscardS gs d_stack' = return (gs { d_stack = d_stack' })
 updateCurPlayer :: State -> Player -> IO State
 updateCurPlayer gs player = return (gs { cur_player = player })
 
--- TODO: Implement this function
+-- DONE: Implement this function
 getNextPlayer :: State -> Player -> Player
-getNextPlayer gs player = head $ players gs
+getNextPlayer gs (NoPlayer _) = head $ players gs
+getNextPlayer gs player 
+  | last (players gs) == player = head $ players gs
+  | otherwise = head [b | (a,b) <- zip (players gs) (tail $ players gs), a == player]
 
 pickNextPlayer :: State -> IO State
 pickNextPlayer gs = updateCurPlayer gs $ getNextPlayer gs (cur_player gs)
